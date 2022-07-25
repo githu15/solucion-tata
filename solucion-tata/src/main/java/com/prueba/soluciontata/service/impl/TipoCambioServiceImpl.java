@@ -10,6 +10,7 @@ import com.prueba.soluciontata.dto.MontoACambiarDto;
 import com.prueba.soluciontata.dto.ResponseCambioDto;
 import com.prueba.soluciontata.model.TipoCambio;
 import com.prueba.soluciontata.service.ITipoCambioService;
+import com.prueba.soluciontata.util.Constantes;
 
 @Service
 public class TipoCambioServiceImpl implements ITipoCambioService{
@@ -34,15 +35,17 @@ public class TipoCambioServiceImpl implements ITipoCambioService{
 
 	@Override
 	public ResponseCambioDto aplicarCambio(MontoACambiarDto mac) {
-		TipoCambio tipoc=new TipoCambio();
-		tipoc=listarPorMoneda(mac.getMonedaDestino());
-		Double nuevoMonto=tipoc.getValorCambio()*mac.getMonto();
 		
-		ResponseCambioDto cambioDto=new ResponseCambioDto();
-		cambioDto.setMontoCambiado(nuevoMonto);
-		cambioDto.setTipoCambio(tipoc.getValorCambio());
-		cambioDto.setMontoACambiar(mac);
-		return cambioDto;
+		TipoCambio tipocOri=new TipoCambio();
+		tipocOri=listarPorMoneda(mac.getMonedaOrigen());
+		
+		TipoCambio tipocDest=new TipoCambio();
+		tipocDest=listarPorMoneda(mac.getMonedaDestino());
+		
+		ResponseCambioDto respuesta=realizarTipoCambio(mac,tipocOri, tipocDest);
+		
+		respuesta.setMontoACambiar(mac);
+		return respuesta;
 	}
 
 	@Override
@@ -50,4 +53,42 @@ public class TipoCambioServiceImpl implements ITipoCambioService{
 		return tdao.listarPorMoneda(moneda);
 	}
 
+	public ResponseCambioDto realizarTipoCambio(MontoACambiarDto mac,TipoCambio tipocOri,TipoCambio tipocDest) {
+		ResponseCambioDto cambioDto=new ResponseCambioDto();
+		Double nuevoMonto=null;
+		if(!mac.getMonedaDestino().equals(mac.getMonedaOrigen())) {
+			
+			switch (mac.getMonedaDestino()) {
+			
+			case Constantes.MON_DOLARES:
+					if(mac.getMonedaOrigen().equals(Constantes.MON_SOLES)) {
+						nuevoMonto=mac.getMonto()/tipocDest.getValorCambio();						
+					}
+					cambioDto.setTipoCambio(tipocDest.getValorCambio());
+				break;
+				
+			case Constantes.MON_SOLES:
+				if(mac.getMonedaOrigen().equals(Constantes.MON_DOLARES)) {
+					nuevoMonto=mac.getMonto()*tipocOri.getValorCambio();
+				}else if(mac.getMonedaOrigen().equals(Constantes.MON_EUROS)){
+					nuevoMonto=mac.getMonto()*tipocOri.getValorCambio();
+				}
+				cambioDto.setTipoCambio(tipocOri.getValorCambio());
+			break;			
+			
+			case Constantes.MON_EUROS:
+				if(mac.getMonedaOrigen().equals(Constantes.MON_SOLES)) {
+					nuevoMonto=mac.getMonto()/tipocDest.getValorCambio();
+				}
+				cambioDto.setTipoCambio(tipocDest.getValorCambio());
+			break;				
+
+			default:
+				break;
+			}
+		}
+		cambioDto.setMontoCambiado((double) Math.round(nuevoMonto*100d)/100);
+		
+		return cambioDto;		
+	}
 }

@@ -3,8 +3,8 @@ package com.prueba.soluciontata.dto;
 public class ResponseCambioDto {
 	private Double montoCambiado;
 	private Double tipoCambio;
-	
 	private MontoACambiarDto montoACambiar;
+	
 	
 	public Double getMontoCambiado() {
 		return montoCambiado;
